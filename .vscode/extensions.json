@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "formulahendry.auto-complete-tag",
+    "clinyong.vscode-css-modules",
+    "dbaeumer.vscode-eslint",
+    "yzhang.markdown-all-in-one",
+    "cipchk.cssrem"
+  ]
+}
