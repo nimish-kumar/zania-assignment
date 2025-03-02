@@ -1,9 +1,12 @@
-export type CheckboxStatusTypes = keyof typeof CheckboxStatus;
+import { CheckboxState } from "./constants";
 
-export interface IProps {
-  status?: CheckboxStatusTypes;
-}
+export type CheckboxStateTypes = keyof typeof CheckboxState;
 
 export interface HTMLCheckboxElement extends HTMLInputElement {
   type: "checkbox";
+}
+
+export interface IProps {
+  handleChange?: (status: boolean | null) => void;
+  checked: boolean | null;
 }

@@ -1,31 +1,25 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import styles from "./Checkbox.module.css";
+import { HTMLCheckboxElement, IProps } from "./Checkbox.types";
 
-import { CheckboxStatus } from "./constants";
-import { CheckboxStatusTypes, HTMLCheckboxElement, IProps } from "./Checkbox.types";
-
-export function Checkbox({ status }: IProps) {
+export function Checkbox({ handleChange, checked }: IProps) {
   const checkboxRef = useRef<HTMLCheckboxElement>(null);
-
   useEffect(() => {
     if (checkboxRef.current)
-      checkboxRef.current.indeterminate =
-        status === CheckboxStatus.INTERMEDIATE;
-  }, [status]);
-
-  const [checkboxStatus, setCheckboxStatus] = useState<CheckboxStatusTypes>(
-    status ?? CheckboxStatus.UNCHECKED
-  );
+      checkboxRef.current.indeterminate = checked === null;
+  }, [checked]);
 
   return (
     <input
       type="checkbox"
       ref={checkboxRef}
-      checked={checkboxStatus === CheckboxStatus.CHECKED}
-      onChange={(e) =>
-        setCheckboxStatus(
-          e.target.checked ? CheckboxStatus.CHECKED : CheckboxStatus.UNCHECKED
-        )
-      }
+      checked={Boolean(checked)}
+      onChange={(e) => {
+        if (handleChange) {
+          handleChange(e.target.checked);
+        }
+      }}
+      className={styles.checkbox}
     />
   );
 }

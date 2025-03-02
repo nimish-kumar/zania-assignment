@@ -1,59 +1,136 @@
-import { createContext, memo, useMemo, useReducer } from "react";
+import {
+  createContext,
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+} from "react";
 import DownloadIcon from "../../../assets/download.svg";
-import { Checkbox, CheckboxStatus } from "../Checkbox";
+import { Checkbox } from "../Checkbox";
 import styles from "./Datagrid.module.css";
 import {
   IDataGridRowProps,
   IProps,
-  TableActions,
+  StatusType,
   TableContextProps,
-  TableStateType,
 } from "./Datagrid.types";
-import { TableActionsTypes } from "./constants";
 
-function DataGridRow({ rowData, hasSelectRow }: IDataGridRowProps) {
-  const memoizedRowData = useMemo(() => rowData, [rowData]);
+import { Status, TableActionsTypes } from "./constants";
+import { tableReducer } from "./reducer";
+import { store } from "./store";
+
+function DataGridRow({
+  rowData,
+  hasSelectRow,
+  styles,
+  headers,
+}: IDataGridRowProps) {
+  const { dispatch, state } = useContext(TableContext);
+  const [checkboxState, setCheckboxState] = useState<boolean>(false);
+  useEffect(() => {
+    if (state.allSelected) {
+      setCheckboxState(true);
+    } else if (state.allSelected === false) {
+      setCheckboxState(false);
+    }
+  }, [state.allSelected]);
+
+  const checkboxChangeHandler = useCallback(
+    (state: boolean | null, value: string | null) => {
+      setCheckboxState(Boolean(state));
+      if (
+        [Status.available, Status.scheduled].findIndex((d) => d === value) !==
+        -1
+      ) {
+        if (state) {
+          return dispatch({
+            type: "INC_SELECTED_COUNT",
+            payload: value as StatusType,
+          });
+        }
+        return dispatch({
+          type: "DEC_SELECTED_COUNT",
+          payload: value as StatusType,
+        });
+      }
+    },
+    [dispatch]
+  );
+
+  const memoizedRowData = useMemo(() => {
+    const row = { ...rowData };
+    if (hasSelectRow) {
+      row["checkbox"] = {
+        value: rowData.status?.value ?? "scheduled",
+        renderData: ({ value }) => (
+          <Checkbox
+            checked={checkboxState}
+            handleChange={(state) => {
+              checkboxChangeHandler(Boolean(state), value);
+            }}
+          />
+        ),
+      };
+    }
+    const rowMapping = Object.entries(row);
+
+    const rTemp = headers.map((h) => ({
+      key: h,
+      ...(rowMapping.find(([k]) => k === h)?.[1] ?? {
+        value: null,
+        renderData: () => null,
+      }),
+    }));
+    return rTemp;
+  }, [checkboxChangeHandler, checkboxState, hasSelectRow, headers, rowData]);
+
   return (
     <tr>
-      {hasSelectRow && (
-        <td>
-          <Checkbox />
-        </td>
-      )}
-      {Object.entries(memoizedRowData)
-        .sort(([k1], [k2]) => k1.localeCompare(k2))
-        .map(([key, d]) => (
-          <td key={key}>
-            {d?.renderData ? d?.renderData({ value: d.value }) : d?.value}
+      {memoizedRowData.map(({ key, value, renderData }) => {
+        return (
+          <td key={key} style={styles[key]}>
+            {renderData ? renderData({ value }) : value}
           </td>
-        ))}
+        );
+      })}
     </tr>
   );
 }
 
 const MemoizedDataRow = memo(DataGridRow);
 
-export function DataGrid({ data, headers, hasSelectRow }: IProps) {
-  const headersWithKeys = useMemo(
-    () =>
-      Object.entries(headers)
-        .sort(([k1], [k2]) => k1.localeCompare(k2))
-        .map(([key, { label, style }]) => ({
-          key,
-          label,
-          style,
-        })),
-    [headers]
-  );
+export function DataGrid({
+  data,
+  headers,
+  hasSelectRow,
+}: Omit<IProps, "availableItemsCount" | "itemsCount">) {
+  const headersWithKeys = useMemo(() => {
+    let hTemp;
+    if (hasSelectRow)
+      hTemp = [
+        { key: "checkbox", label: null, style: undefined },
+        ...Object.entries(headers).map(([key, value]) => ({ key, ...value })),
+      ];
+    return hTemp as {
+      label: string | null;
+      style?: React.CSSProperties;
+      key: string;
+    }[];
+  }, [hasSelectRow, headers]);
+
+  const stylesObj: Record<string, React.CSSProperties> = {};
+  headersWithKeys.forEach((d) => {
+    stylesObj[d.key] = d.style ?? {};
+  });
   return (
     <table className={styles.datagrid}>
-      {/* {headersWithKeys.map((header) => (
-        <col style={header.style} key={header.key} />
-      ))} */}
       <thead>
         <tr key="headers">
           {headersWithKeys.map((header) => (
-            <th scope="col" style={header.style} key={header.key}>
+            <th scope="col" key={header.key}>
               {header.label}
             </th>
           ))}
@@ -62,9 +139,11 @@ export function DataGrid({ data, headers, hasSelectRow }: IProps) {
       <tbody>
         {data.map((row, idx) => (
           <MemoizedDataRow
+            headers={headersWithKeys.map((d) => d.key)}
             rowData={row}
             hasSelectRow={hasSelectRow}
             key={idx}
+            styles={stylesObj}
           />
         ))}
       </tbody>
@@ -72,60 +151,60 @@ export function DataGrid({ data, headers, hasSelectRow }: IProps) {
   );
 }
 
-const initialState: TableStateType = {
-  availableItemsCount: 3,
-  selectedAvailableItemsCount: 3,
-};
+const TableContext = createContext<TableContextProps>({
+  state: store,
+  dispatch: () => null,
+});
 
-const TableContext = createContext<TableContextProps | undefined>(undefined);
+function HeadRow() {
+  const {
+    state: {
+      selectedAvailableItemsCount,
+      availableItemsCount,
+      itemsCount,
+      selectedItemsCount,
+      allSelected,
+    },
+    dispatch,
+  } = useContext(TableContext);
 
-function tableReducer(
-  state: TableStateType,
-  action: TableActions
-): TableStateType {
-  switch (action.type) {
-    case TableActionsTypes.SET_AVAILABLE_COUNT:
-      return {
-        ...state,
-        availableItemsCount: action.payload,
-      };
-    case TableActionsTypes.SET_SELECTED_AVAILABLE_COUNT:
-      return {
-        ...state,
-        availableItemsCount: action.payload,
-      };
-    default:
-      return state;
-  }
-}
-
-function SelectAllRow({
-  availableItemsCount,
-  selectedAvailableItemsCount,
-}: {
-  selectedAvailableItemsCount: number;
-  availableItemsCount: number;
-}) {
-  function getselectedAvailableItemsCountLabel() {
-    if (selectedAvailableItemsCount == 0)
-      return { label: "None Selected", status: CheckboxStatus.UNCHECKED };
-    if (
+  const isDownloadButtonEnabled = useMemo(
+    () =>
       selectedAvailableItemsCount > 0 &&
-      selectedAvailableItemsCount === availableItemsCount
-    )
-      return { label: "All Selected", status: CheckboxStatus.CHECKED };
-    return { label: "Some Selected", status: CheckboxStatus.INTERMEDIATE };
-  }
+      selectedAvailableItemsCount === availableItemsCount,
+    [availableItemsCount, selectedAvailableItemsCount]
+  );
 
-  const { status, label } = getselectedAvailableItemsCountLabel();
+  const label = useMemo(() => {
+    if (allSelected) return "All Selected";
+    if (allSelected === null) return "Some Selected";
+    return "None Selected";
+  }, [allSelected]);
+
+  useEffect(() => {
+    if (selectedItemsCount > 0 && selectedItemsCount === itemsCount) {
+      dispatch({ type: TableActionsTypes.ALL_SELECTED, payload: true });
+    } else if (selectedItemsCount === 0) {
+      dispatch({ type: TableActionsTypes.ALL_SELECTED, payload: false });
+    } else dispatch({ type: TableActionsTypes.ALL_SELECTED, payload: null });
+  }, [dispatch, itemsCount, selectedItemsCount]);
+
   return (
     <div className={styles.selectAllRow}>
       <div className={styles.checkboxContainer}>
-        <Checkbox status={status} />
+        <Checkbox
+          checked={allSelected}
+          handleChange={(state) => {
+            dispatch({
+              type: TableActionsTypes.ALL_SELECTED,
+              payload: state,
+            });
+          }}
+        />
         <span>{label}</span>
       </div>
       <button
-        disabled={!(status === CheckboxStatus.CHECKED)}
+        disabled={!isDownloadButtonEnabled}
         className={styles.downloadBtn}
       >
         <img src={DownloadIcon} alt="Download Icon" height={20} width={20} />
@@ -135,16 +214,40 @@ function SelectAllRow({
   );
 }
 
-export function Table({ headers, data, hasSelectRow }: IProps) {
-  const [state, dispatch] = useReducer(tableReducer, initialState);
+export function Table({
+  headers,
+  data,
+  hasSelectRow,
+  availableItemsCount,
+  itemsCount,
+}: IProps) {
+  const [state, dispatch] = useReducer(tableReducer, store);
+
+  useEffect(() => {
+    dispatch({
+      type: TableActionsTypes.SET_AVAILABLE_COUNT,
+      payload: availableItemsCount,
+    });
+  }, [availableItemsCount]);
+
+  useEffect(() => {
+    dispatch({
+      type: TableActionsTypes.SET_COUNT,
+      payload: itemsCount,
+    });
+  }, [itemsCount]);
+
+  const contextValues = useMemo(
+    () => ({
+      state,
+      dispatch,
+    }),
+    [state]
+  );
+  console.log("State: ", state);
   return (
-    <TableContext.Provider value={{ state, dispatch }}>
-      {hasSelectRow && (
-        <SelectAllRow
-          availableItemsCount={state.availableItemsCount}
-          selectedAvailableItemsCount={state.selectedAvailableItemsCount}
-        />
-      )}
+    <TableContext.Provider value={contextValues}>
+      {hasSelectRow && <HeadRow />}
       <DataGrid headers={headers} data={data} hasSelectRow={hasSelectRow} />
     </TableContext.Provider>
   );
