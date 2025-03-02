@@ -1,0 +1,52 @@
+.datagrid {
+  width: 100%;
+  border-collapse: collapse;
+}
+.datagrid tr {
+  border: solid 1px black;
+}
+
+.datagrid tr:first-child > th {
+  text-align: left;
+}
+
+.datagrid th,
+td {
+  text-align: left; /* Aligns text to the left */
+  padding: 0.5rem;
+}
+
+.datagrid tr > td:first-child,
+th:first-child {
+  padding-left: 1rem;
+  padding-top: 0.5rem;
+  padding-right: 1rem;
+  padding-bottom: 0.5rem;
+  width: 15%;
+}
+
+.datagrid th:nth-child(2) {
+  width: 20%;
+}
+
+.downloadBtn {
+  background-color: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.selectAllRow {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  border: solid 1px black;
+  padding: 0.5rem 1rem;
+  border-bottom: none;
+}
+.checkboxContainer {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+}

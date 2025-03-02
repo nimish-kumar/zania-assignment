@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckboxStatus } from "./constants";
 
-export default function Checkbox({ status }: IProps) {
+import { CheckboxStatus } from "./constants";
+import { CheckboxStatusTypes, HTMLCheckboxElement, IProps } from "./Checkbox.types";
+
+export function Checkbox({ status }: IProps) {
   const checkboxRef = useRef<HTMLCheckboxElement>(null);
 
   useEffect(() => {
