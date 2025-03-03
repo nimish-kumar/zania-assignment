@@ -1,5 +1,7 @@
 # Zania Assignment (React + TypeScript + Vite)
 
+Deployed URL: [https://zania-assignment-kappa.vercel.app/](https://zania-assignment-kappa.vercel.app/)
+
 This document provides instructions on setting up and running the Vite React TypeScript application locally.
 
 ## Prerequisites
