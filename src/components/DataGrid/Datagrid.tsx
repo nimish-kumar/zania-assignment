@@ -185,8 +185,9 @@ function HeadRow() {
   const isDownloadButtonEnabled = useMemo(
     () =>
       selectedAvailableItemsCount > 0 &&
-      selectedAvailableItemsCount <= availableItemsCount,
-    [availableItemsCount, selectedAvailableItemsCount]
+      selectedAvailableItemsCount <= availableItemsCount &&
+      selectedItemsCount === selectedAvailableItemsCount,
+    [availableItemsCount, selectedAvailableItemsCount, selectedItemsCount]
   );
 
   const label = useMemo(() => {
