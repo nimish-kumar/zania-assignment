@@ -44,8 +44,7 @@ function DataGridRow({
     (state: boolean | null, value: string | null) => {
       setCheckboxState(Boolean(state));
       if (
-        [Status.available, Status.scheduled].findIndex((d) => d === value) !==
-        -1
+        [Status.available, Status.scheduled].findIndex((d) => d === value) > -1
       ) {
         if (state) {
           return dispatch({
