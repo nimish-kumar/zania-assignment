@@ -1,4 +1,4 @@
-import { Table } from "./components/DataGrid/Datagrid";
+import { Table } from "./components/DataGrid";
 import { SAMPLE_DATA, TRANSFORMED_DATA } from "./data";
 
 function App() {
