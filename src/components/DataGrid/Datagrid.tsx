@@ -1,6 +1,5 @@
 import {
   createContext,
-  memo,
   useCallback,
   useContext,
   useEffect,
@@ -30,6 +29,7 @@ function DataGridRow({
 }: IDataGridRowProps) {
   const { dispatch, state } = useContext(TableContext);
   const [checkboxState, setCheckboxState] = useState<boolean>(false);
+  
   useEffect(() => {
     if (state.allSelected) {
       setCheckboxState(true);
@@ -38,27 +38,26 @@ function DataGridRow({
     }
   }, [state.allSelected]);
 
-  const checkboxChangeHandler = useCallback(
-    (state: boolean | null, value: string | null) => {
-      setCheckboxState(Boolean(state));
-      if (
-        [Status.available, Status.scheduled].findIndex((d) => d === value) !==
-        -1
-      ) {
-        if (state) {
-          return dispatch({
-            type: "INC_SELECTED_COUNT",
-            payload: value as StatusType,
-          });
-        }
+  const checkboxChangeHandler = useCallback((
+    state: boolean | null,
+    value: string | null
+  ) => {
+    setCheckboxState(Boolean(state));
+    if (
+      [Status.available, Status.scheduled].findIndex((d) => d === value) !== -1
+    ) {
+      if (state) {
         return dispatch({
-          type: "DEC_SELECTED_COUNT",
+          type: "INC_SELECTED_COUNT",
           payload: value as StatusType,
         });
       }
-    },
-    [dispatch]
-  );
+      return dispatch({
+        type: "DEC_SELECTED_COUNT",
+        payload: value as StatusType,
+      });
+    }
+  }, [dispatch]);
 
   const memoizedRowData = useMemo(() => {
     const row = { ...rowData };
@@ -100,8 +99,6 @@ function DataGridRow({
   );
 }
 
-const MemoizedDataRow = memo(DataGridRow);
-
 export function DataGrid({
   data,
   headers,
@@ -125,12 +122,18 @@ export function DataGrid({
   headersWithKeys.forEach((d) => {
     stylesObj[d.key] = d.style ?? {};
   });
+
+  const headerKeys = useMemo(
+    () => headersWithKeys.map((d) => d.key),
+    [headersWithKeys]
+  );
+
   return (
     <table className={styles.datagrid}>
       <thead>
         <tr key="headers">
           {headersWithKeys.map((header) => (
-            <th scope="col" key={header.key}>
+            <th scope="col" key={header.key} style={header.style}>
               {header.label}
             </th>
           ))}
@@ -138,8 +141,8 @@ export function DataGrid({
       </thead>
       <tbody>
         {data.map((row, idx) => (
-          <MemoizedDataRow
-            headers={headersWithKeys.map((d) => d.key)}
+          <DataGridRow
+            headers={headerKeys}
             rowData={row}
             hasSelectRow={hasSelectRow}
             key={idx}
@@ -171,7 +174,7 @@ function HeadRow() {
   const isDownloadButtonEnabled = useMemo(
     () =>
       selectedAvailableItemsCount > 0 &&
-      selectedAvailableItemsCount === availableItemsCount,
+      selectedAvailableItemsCount <= availableItemsCount,
     [availableItemsCount, selectedAvailableItemsCount]
   );
 
@@ -244,7 +247,6 @@ export function Table({
     }),
     [state]
   );
-  console.log("State: ", state);
   return (
     <TableContext.Provider value={contextValues}>
       {hasSelectRow && <HeadRow />}

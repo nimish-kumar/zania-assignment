@@ -49,12 +49,12 @@ export type PossibleJsonDataType = string | number | boolean;
 
 export type IData<T extends Record<keyof ISampleData, PossibleJsonDataType>> = {
   [K in keyof T]: {
-    renderData?: (props: { value: T[K] | null}) => JSX.Element;
+    renderData: ((props: { value: T[K] | null }) => JSX.Element | null) | null;
     value: T[K];
   } | null;
 };
 
-type StatusType = keyof typeof Status;
+export type StatusType = keyof typeof Status;
 
 interface ISampleData {
   checkbox: string;
