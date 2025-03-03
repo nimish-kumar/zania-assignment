@@ -1,5 +1,6 @@
 import { Table } from "./components/DataGrid/Datagrid";
 import { SAMPLE_DATA, TRANSFORMED_DATA } from "./data";
+
 function App() {
   return (
     <>

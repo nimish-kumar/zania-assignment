@@ -17,6 +17,7 @@ import {
   TableContextProps,
 } from "./Datagrid.types";
 
+import { SAMPLE_DATA } from "../../data";
 import { Status, TableActionsTypes } from "./constants";
 import { tableReducer } from "./reducer";
 import { store } from "./store";
@@ -26,10 +27,11 @@ function DataGridRow({
   hasSelectRow,
   styles,
   headers,
+  rowIdx,
 }: IDataGridRowProps) {
   const { dispatch, state } = useContext(TableContext);
   const [checkboxState, setCheckboxState] = useState<boolean>(false);
-  
+
   useEffect(() => {
     if (state.allSelected) {
       setCheckboxState(true);
@@ -38,26 +40,33 @@ function DataGridRow({
     }
   }, [state.allSelected]);
 
-  const checkboxChangeHandler = useCallback((
-    state: boolean | null,
-    value: string | null
-  ) => {
-    setCheckboxState(Boolean(state));
-    if (
-      [Status.available, Status.scheduled].findIndex((d) => d === value) !== -1
-    ) {
-      if (state) {
+  const checkboxChangeHandler = useCallback(
+    (state: boolean | null, value: string | null) => {
+      setCheckboxState(Boolean(state));
+      if (
+        [Status.available, Status.scheduled].findIndex((d) => d === value) !==
+        -1
+      ) {
+        if (state) {
+          return dispatch({
+            type: "INC_SELECTED_COUNT",
+            payload: {
+              status: value as StatusType,
+              idx: value === "available" ? rowIdx : null,
+            },
+          });
+        }
         return dispatch({
-          type: "INC_SELECTED_COUNT",
-          payload: value as StatusType,
+          type: "DEC_SELECTED_COUNT",
+          payload: {
+            status: value as StatusType,
+            idx: value === "available" ? rowIdx : null,
+          },
         });
       }
-      return dispatch({
-        type: "DEC_SELECTED_COUNT",
-        payload: value as StatusType,
-      });
-    }
-  }, [dispatch]);
+    },
+    [dispatch, rowIdx]
+  );
 
   const memoizedRowData = useMemo(() => {
     const row = { ...rowData };
@@ -142,6 +151,7 @@ export function DataGrid({
       <tbody>
         {data.map((row, idx) => (
           <DataGridRow
+            rowIdx={idx}
             headers={headerKeys}
             rowData={row}
             hasSelectRow={hasSelectRow}
@@ -167,6 +177,7 @@ function HeadRow() {
       itemsCount,
       selectedItemsCount,
       allSelected,
+      selectedAvailableItemsIdx,
     },
     dispatch,
   } = useContext(TableContext);
@@ -209,6 +220,21 @@ function HeadRow() {
       <button
         disabled={!isDownloadButtonEnabled}
         className={styles.downloadBtn}
+        onClick={() => {
+          const idxList = [...selectedAvailableItemsIdx].filter(
+            (d) => d !== null
+          );
+          const messages = SAMPLE_DATA.filter(
+            (_, idx) => idxList.findIndex((d) => d === idx) > -1
+          )
+            .map((d) =>
+              Object.entries(d)
+                .map(([k, v]) => `${k} : ${v}`)
+                .join(", ")
+            )
+            .join("\n");
+          alert(["Dowloaded Items", messages].join("\n\n"));
+        }}
       >
         <img src={DownloadIcon} alt="Download Icon" height={20} width={20} />
         <span>Download Selected</span>

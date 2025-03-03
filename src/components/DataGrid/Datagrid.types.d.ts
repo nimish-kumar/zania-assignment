@@ -14,6 +14,7 @@ export type TableStateType = {
   itemsCount: number;
   selectedItemsCount: number;
   allSelected: boolean | null;
+  selectedAvailableItemsIdx: Set<number | null>;
 };
 
 export interface TableContextProps {
@@ -34,11 +35,11 @@ export type TableActions =
     }
   | {
       type: (typeof TableActionsTypes)["INC_SELECTED_COUNT"];
-      payload: StatusType;
+      payload: { status: StatusType; idx: number | null };
     }
   | {
       type: (typeof TableActionsTypes)["DEC_SELECTED_COUNT"];
-      payload: StatusType;
+      payload: { status: StatusType; idx: number | null };
     }
   | {
       type: (typeof TableActionsTypes)["ALL_SELECTED"];
@@ -68,6 +69,7 @@ export interface IDataGridRowProps extends Pick<IProps, "hasSelectRow"> {
   rowData: IData<ISampleData>;
   styles: Record<string, React.CSSProperties | undefined>;
   headers: string[];
+  rowIdx: number;
 }
 
 export interface IProps {

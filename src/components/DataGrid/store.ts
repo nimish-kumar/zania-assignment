@@ -6,4 +6,5 @@ export const store: TableStateType = {
   itemsCount: 0,
   selectedItemsCount: 0,
   allSelected: false,
+  selectedAvailableItemsIdx: new Set(),
 };
